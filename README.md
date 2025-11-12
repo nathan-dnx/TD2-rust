@@ -19,7 +19,7 @@ cargo run
 
 Ouvrir le tableau de bord :
 
-Ouvrir le fichier dashboard.html dans un navigateur
+Ouvrir le fichier client.html dans un navigateur
 
 Le dashboard se connecte automatiquement au WebSocket et affiche les prix en temps réel.
 
