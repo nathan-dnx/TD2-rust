@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Stock Price Dashboard</title>
+  <style>
+    body{font-family:Segoe UI,Arial;margin:0;padding:20px;background:#0f172a;color:#fff}
+    h1{text-align:center;margin:0 0 10px}
+    .status{text-align:center;margin-bottom:20px}
+    .status.connected{color:#4ade80}.status.disconnected{color:#f87171}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .card{background:#111827;border-radius:12px;padding:16px;box-shadow:0 6px 12px rgba(0,0,0,.2)}
+    .symbol{font-weight:700;color:#60a5fa;margin-bottom:6px}
+    .price{font-size:28px;font-weight:800}
+    .meta{font-size:12px;color:#9ca3af;margin-top:6px;text-transform:uppercase}
+  </style>
+</head>
+<body>
+  <h1>📈 Real-Time Stock Prices</h1>
+  <div id="status" class="status">Connecting…</div>
+  <div id="grid" class="grid"></div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const statusEl = document.getElementById('status');
+    const data = new Map();
+
+    function connect(){
+      const ws = new WebSocket('ws://127.0.0.1:8080');
+      ws.onopen   = () => { statusEl.textContent='🟢 Connected'; statusEl.className='status connected'; };
+      ws.onclose  = () => { statusEl.textContent='🔴 Disconnected – Reconnecting…'; statusEl.className='status disconnected'; setTimeout(connect,3000); };
+      ws.onerror  = (e) => console.error('WS error', e);
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if(msg.type === 'connected') return;
+        const key = `${msg.symbol}-${msg.source}`;
+        data.set(key, msg);
+        render();
+      };
+    }
+
+    function render(){
+      const list = Array.from(data.values()).sort((a,b)=>a.symbol.localeCompare(b.symbol));
+      grid.innerHTML = list.map(x=>{
+        const t = new Date(x.timestamp*1000).toLocaleTimeString();
+        return `<div class="card">
+          <div class="symbol">${x.symbol}</div>
+          <div class="price">$${x.price.toFixed(2)}</div>
+          <div class="meta">${x.source} • ${t}</div>
+        </div>`;
+      }).join('');
+    }
+
+    connect();
+  </script>
+</body>
+</html>
